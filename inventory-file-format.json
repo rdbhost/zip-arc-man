@@ -1,0 +1,37 @@
+
+
+    inv = {
+        'backup_time': ftime,
+        'backup_name': 'zip_filename',
+        'known_files': {
+            'data_filename0': {
+                    'zip_filename0': {
+                        'timestamp': datetime.datetime,
+                        'status': 'raw',
+                        'crc': <crc>,
+                        'filesize': 123
+                    },
+                    'zip_filename1': {
+                        'timestamp': datetime.datetime,
+                        'status': 'moved',
+                        'crc': <crc>,
+                        'filesize': 123,
+                        'original': '/path/to/original/file'
+                    },
+                    'zip_filename2': {
+                        'timestamp': datetime.datetime,
+                        'status': 'diff',
+                        'crc': <crc>,
+                        'filesize': 123,
+                        'diff_from': 'zip_filename'
+                    },
+                    'zip_filename1': {
+                        'timestamp': datetime.datetime,
+                        'status': 'duplicate',
+                        'original': '/path/to/original/file',
+                        'filesize': 123,
+                        'crc': <crc>
+                    }
+                }
+            }
+        }
