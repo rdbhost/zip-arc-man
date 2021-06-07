@@ -7,7 +7,6 @@ import zipfile
 import json
 import datetime
 
-INVENTORY_FILENAME = 'backup~compactor~inventory~list~json.json'
 
 def inventories_are_different(backup, zi, blob):
 

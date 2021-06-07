@@ -71,7 +71,7 @@ def create_tree(db):
                     src_name = 'SRC==> '+arrow.get(src['timestamp']).humanize()+' '+src['path']
                     treedata.Insert(key, key1, src_name, cols, icon=vers_icon)
             else:
-                raise Error(type(subtree[pth_seg]))
+                raise Exception(type(subtree[pth_seg]))
 
         for ptk in pytree.keys():
             transfer(pytree, '', ptk)
