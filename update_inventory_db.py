@@ -120,7 +120,8 @@ if __name__ == '__main__':
     from argparse import ArgumentParser
     parser = ArgumentParser(description="inventory updater")
     parser.add_argument('args', nargs='+', help="names of source files")
-    parser.add_argument('-d', '--database', dest='db', help="name of json database file")
+    parser.add_argument('-d', '--database', dest='db', help="name of json database file", 
+                         required=True)
 
     parser.add_argument('--new', dest='mustcreate', action='store_true',
                         help="if json database does not exist")
