@@ -68,7 +68,7 @@ def create_tree(db):
                     key1 = key+src['path']
                     cols = [sizeof_fmt(src['filesize']),
                             datetime.fromtimestamp(src['timestamp']).strftime("%d %b %y %H:%M")]
-                    src_name = 'SRC==> '+arrow.get(src['timestamp']).humanize()+' '+src['path']
+                    src_name = 'SRC==> {} ({})'.format(src['path'], arrow.get(src['timestamp']).humanize())
                     treedata.Insert(key, key1, src_name, cols, icon=vers_icon)
             else:
                 raise Exception(type(subtree[pth_seg]))

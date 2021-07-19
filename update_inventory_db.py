@@ -3,40 +3,11 @@ import sys
 import os.path
 import copy
 
-import zipfile
 import json
 import datetime
 
+import backup_zipfile
 
-def inventories_are_different(backup, zi, blob):
-
-    if zi is None:
-        return True
-    blob1 = blob.encode()
-    inv1 = json.loads(blob1)
-    b1 = json.dumps(inv1, sort_keys=True, indent=False)
-
-    blob0 = backup.open(zi).read()
-    inv0 = json.loads(blob0)
-    b0 = json.dumps(inv0, sort_keys=True, indent=False)
-    # print('blob sizes are {} and {}'.format(len(blob0), len(blob1)))
-    return b0 != b1
-
-def merge(inv, crcs, other):
-
-    # known files
-    kfs = inv['known_files']
-    for filename, file_rec in other['known_files'].items():
-        kf = inv['known_files'].setdefault(filename, {})
-        kf.update(file_rec)
-
-        for src, item in kf.items():
-            if item['status'] != 'raw':
-                continue
-            crc = item['crc']
-            if crc in crcs and item['timestamp'] < crcs[crc]['timestamp']:
-                continue
-            crcs[crc] = {'timestamp': item['timestamp'], 'backup_file': src, 'filename': filename}
 
 def get_filename(itm):
     filename = itm.filename
@@ -45,20 +16,23 @@ def get_filename(itm):
         filename = '/'.join([cmt, filename])
     return filename
 
-def add_backup_file(src, crcs, inv):
+def add_backup_file(src, inv):
 
-    with zipfile.ZipFile(src, mode='r') as bu:
+    del_keys = []
+    for k, itms in inv['known_files'].items():
+        if src in itms:
+            del itms[src]
+        if len(itms) == 0:
+            del_keys.append(k)
+    for k in del_keys:
+        del inv['known_files'][k]
 
-        del_keys = []
-        for k, itms in inv['known_files'].items():
-            if bu.filename in itms:
-                del itms[bu.filename]
-            if len(itms) == 0:
-                del_keys.append(k)
-        for k in del_keys:
-            del inv['known_files'][k]
+    if not os.path.exists(src):
+        print('file {} was not found'.format(src))
+        return
 
-        crc_dupe_count = 0
+    with backup_zipfile.BackupFile(src, mode='r') as bu:
+
         for itm in bu.infolist():
 
             if not itm.filename or itm.is_dir():
@@ -67,25 +41,13 @@ def add_backup_file(src, crcs, inv):
             filename = get_filename(itm)
 
             fn = inv['known_files'].setdefault(filename, {})
-            timestamp = datetime.datetime(*itm.date_time).timestamp()
+            timestamp = bu.time_stamp.timestamp() # itm.date_time.timestamp()
             fn[bu.filename] = {'timestamp': timestamp}
             f = fn[bu.filename]
             f['status'] = 'raw'
             f['crc'] = itm.CRC
             f['filesize'] = itm.file_size
             assert f.get('status') and f.get('crc') is not None, (filename, itm.CRC)
-
-            if itm.CRC in crcs:
-                crc_dupe_count += 1
-
-            crc = itm.CRC
-            if crc in crcs and timestamp < crcs[crc]['timestamp']:
-                continue
-            crcs[crc] = {'timestamp': timestamp, 'backup_file': bu.filename, 'filename': filename}
-
-        if crc_dupe_count > 0:
-            print('found duplicate {0} crcs in {1}'.format(crc_dupe_count, bu.filename))
-
 
 def main(db, srcs, new=False):
 
@@ -104,11 +66,10 @@ def main(db, srcs, new=False):
         return
 
     prev_inv = json.loads(jsn)
-    crcs = {}
     for src in srcs:
 
         print('processing source {}'.format(src))
-        add_backup_file(src, crcs, prev_inv)
+        add_backup_file(src, prev_inv)
 
     blob = json.dumps(prev_inv, indent=2)
     print('writing new/changed inventory of length {}'.format(len(blob)))
